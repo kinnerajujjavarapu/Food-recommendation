@@ -84,7 +84,7 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
     return candidates[['recipe_name', 'nutrient_score', 'ghg_total', 'ghg_score', 'price', 'score']].head(top_n)
 
 # Streamlit UI
-st.title("🥗 Sustainable Recipe Recommender (Hybrid: Nutrients + Price + GHG + Content)")
+st.title("🥗 Sustainable and nutritious Recipe Recommender system ")
 
 # Load data and model
 df = load_data('recipe_data_with_Eng_name.xlsx', sheet_name='English_version', header=None, engine='openpyxl')  # Ensure the file is in the same directory or update path

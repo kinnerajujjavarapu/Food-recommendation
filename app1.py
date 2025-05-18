@@ -125,4 +125,4 @@ public_url = ngrok.connect('8501')
 print(f"Public URL: {public_url}")
 
 # Run Streamlit app in background
-!streamlit run app.py &> streamlit.log &
+streamlit run app.py > streamlit.log 2>&1 &

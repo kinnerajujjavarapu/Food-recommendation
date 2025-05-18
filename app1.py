@@ -87,7 +87,7 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
 st.title("🥗 Sustainable and nutritious Recipe Recommender system ")
 
 # Load data and model
-df = load_data('recipe_data_with_Eng_name.xlsx', sheet_name='English_version', header=None, engine='openpyxl')  # Ensure the file is in the same directory or update path
+df = load_data('recipe_data_with_Eng_name.xlsx')  # Ensure the file is in the same directory or update path
 model, embeddings = load_model_and_embeddings(df)
 
 # User inputs

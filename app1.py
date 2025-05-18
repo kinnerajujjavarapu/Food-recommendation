@@ -12,7 +12,7 @@ from sentence_transformers import SentenceTransformer
 # Function to load and preprocess data
 @st.cache_data(show_spinner=False)
 def load_data(path):
-    df = pd.read_excel(path, sheet_name='English_version', header=None)
+    df = pd.read_excel(path, sheet_name='English_version', header=None, engine='openpyxl')  # moved here
     df.columns = df.iloc[1]
     df = df.drop(index=0).reset_index(drop=True)
     df.columns = [str(col).strip().lower().replace(' ', '_') for col in df.columns]

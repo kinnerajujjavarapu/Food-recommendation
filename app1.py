@@ -1,7 +1,4 @@
-from pyngrok import ngrok
-ngrok.set_auth_token("Your_Auth_Token")
-
-code = '''import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -19,14 +16,12 @@ def load_data(path):
     df['ghg_total'] = pd.to_numeric(df['ghg_total'], errors='coerce')
     df['cliped_count'] = pd.to_numeric(df['cliped_count'], errors='coerce').fillna(0)
 
-    # Nutrients
     nutrient_cols = ['protein_(g)', 'total_fiber_(g)', 'fat_(g)', 'salt_equivalent_(g)']
     for col in nutrient_cols:
         if col not in df.columns:
             df[col] = 0
     df[nutrient_cols] = df[nutrient_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
 
-    # Normalize nutrient scores
     scaler = MinMaxScaler()
     df[['protein_score', 'fiber_score']] = scaler.fit_transform(df[['protein_(g)', 'total_fiber_(g)']])
     df[['fat_score', 'salt_score']] = 1 - scaler.fit_transform(df[['fat_(g)', 'salt_equivalent_(g)']])
@@ -37,17 +32,15 @@ def load_data(path):
         0.1 * df['salt_score']
     )
 
-    # Combine text for embedding
     df['combined_text'] = (
         df['keywords'].fillna('') + ' ' +
         df['recipe_description'].fillna('')
     ).str.lower()
 
-    # Clean and handle price column
     if 'price' not in df.columns:
         raise ValueError("The dataset must contain a 'price' column.")
 
-    df['price'] = df['price'].astype(str).str.extract(r'([\d\.]+)')  # extract numeric part
+    df['price'] = df['price'].astype(str).str.extract(r'([\d\.]+)')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     df['price'] = df['price'].fillna(df['price'].mean() if pd.api.types.is_numeric_dtype(df['price']) else 0)
 
@@ -61,7 +54,7 @@ def load_model_and_embeddings(df):
     embeddings = model.encode(df['combined_text'].tolist(), convert_to_tensor=True, show_progress_bar=True)
     return model, embeddings
 
-# Recommendation function
+# Recommendation logic
 def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=None, alpha=0.7):
     user_embedding = model.encode([user_query], convert_to_tensor=True)
     content_sim = cosine_similarity(user_embedding.cpu().numpy(), embeddings.cpu().numpy())[0]
@@ -72,7 +65,6 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
     ghg_norm = 1 - (df['ghg_total'] - df['ghg_total'].min()) / (df['ghg_total'].max() - df['ghg_total'].min())
     df['ghg_score'] = ghg_norm.round(3)
 
-    # Final score includes GHG score (0.05 weight)
     final_scores = (
         alpha * sim_norm +
         0.15 * nutrient_norm +
@@ -82,7 +74,6 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
     df['score'] = final_scores.round(3)
 
     candidates = df.sort_values(by='score', ascending=False)
-
     if price_limit is not None and price_limit > 0:
         candidates = candidates[candidates['price'] <= price_limit]
 
@@ -92,14 +83,13 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
 st.title("🥗 Sustainable Recipe Recommender (Hybrid: Nutrients + Price + GHG + Content)")
 
 # Load data and model
-df = load_data('/content/recipe_data_with_Eng_name.xlsx')
+df = load_data('recipe_data_with_Eng_name.xlsx')  # Ensure the file is in the same directory or update path
 model, embeddings = load_model_and_embeddings(df)
 
 # User inputs
 user_input = st.text_input("Enter recipe keywords or requirements (e.g. 'high protein low fat curry'):")
 
 top_n = st.slider("📋 Number of recommendations to show", 1, 20, 5)
-
 price_limit = st.number_input("💰 Max Price Limit (0 means no limit)", min_value=0.0, value=0.0, step=50.0, format="%.1f")
 
 if st.button("Get Recommendations"):
@@ -112,17 +102,3 @@ if st.button("Get Recommendations"):
             st.info("No recipes found matching your criteria.")
         else:
             st.dataframe(results.reset_index(drop=True))
-'''
-
-with open("app.py", "w") as f:
-    f.write(code)
-
-from pyngrok import ngrok
-
-# Open a tunnel on port 8501
-# Pass the port number as the first argument
-public_url = ngrok.connect('8501')
-print(f"Public URL: {public_url}")
-
-# Run Streamlit app in background
-streamlit run app.py > streamlit.log 2>&1 &

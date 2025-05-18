@@ -1,4 +1,8 @@
 import streamlit as st
+import sys
+st.write("Streamlit version:", st.__version__)
+st.write("Python version:", sys.version)
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -6,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
 # Function to load and preprocess data
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data(path):
     df = pd.read_excel(path, sheet_name='English_version', header=None)
     df.columns = df.iloc[1]
@@ -48,7 +52,7 @@ def load_data(path):
     return df
 
 # Function to compute embeddings
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_model_and_embeddings(df):
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(df['combined_text'].tolist(), convert_to_tensor=True, show_progress_bar=True)
@@ -83,7 +87,7 @@ def hybrid_recommend(df, embeddings, model, user_query, top_n=5, price_limit=Non
 st.title("🥗 Sustainable Recipe Recommender (Hybrid: Nutrients + Price + GHG + Content)")
 
 # Load data and model
-df = load_data('recipe_data_with_Eng_name.xlsx')  # Ensure the file is in the same directory or update path
+df = load_data('recipe_data_with_Eng_name.xlsx', sheet_name='English_version', header=None, engine='openpyxl')  # Ensure the file is in the same directory or update path
 model, embeddings = load_model_and_embeddings(df)
 
 # User inputs
